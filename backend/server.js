@@ -183,9 +183,7 @@ app.post("/api/visitors", async (req, res) => {
 });
 
 // Full list for VisitorLog (optional ?limit=200)
-Backend quick fix (add an alias that returns what the UI expects)
 
-Add this route to server.js (near the other admin routes):
 
 // Admin combined: alias for older UI that calls /api/admin
 app.get("/api/admin", async (_req, res) => {
