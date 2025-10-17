@@ -37,7 +37,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Login to Azure (OIDC) so azure/webapps-deploy works
+      # #Login to Azure (OIDC) so azure/webapps-deploy works
       - name: Azure Login
         uses: azure/login@v2
         with:
