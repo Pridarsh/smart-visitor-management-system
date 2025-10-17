@@ -183,6 +183,34 @@ app.post("/api/visitors", async (req, res) => {
 });
 
 // Full list for VisitorLog (optional ?limit=200)
+Backend quick fix (add an alias that returns what the UI expects)
+
+Add this route to server.js (near the other admin routes):
+
+// Admin combined: alias for older UI that calls /api/admin
+app.get("/api/admin", async (_req, res) => {
+  try {
+    const [totalToday, insideNow, pending, monthTotal] = await Promise.all([
+      countToday(),
+      countByStatus("CHECKED_IN"),
+      countByStatus("PENDING"),
+      countThisMonth(),
+    ]);
+    const recent = await fetchRecent(10);
+    // Return a single JSON shape most dashboards expect
+    res.json({
+      stats: { totalToday, insideNow, pending, monthTotal },
+      recent,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to fetch admin data" });
+  }
+});
+
+
+app.get("/health", (_req, res) => res.json({ ok: true }));
+
 app.get("/api/visitors", async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || "100", 10), 500);
