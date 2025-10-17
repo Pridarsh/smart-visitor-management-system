@@ -37,7 +37,7 @@ jobs:
       # 5️⃣ Build and Push Backend Docker Image
       - name: Build and Push Backend
         run: |
-          docker build -t recsvm.azurecr.io/svm-backend:latest ./svm-backend
+          docker build -t recsvm.azurecr.io/svm-backend:latest ./backend
           docker push recsvm.azurecr.io/svm-backend:latest
 
       # 6️⃣ Deploy Frontend to Azure Web App
