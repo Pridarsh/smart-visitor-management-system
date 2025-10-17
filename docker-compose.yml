@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: svm-backend
+    container_name: campusgate-api
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8081:8080"     # if 8080 is in use, change left side to 8081:8080
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./smart-visitor-management
+    image: svm-frontend
+    container_name: campusgate-web
+    ports:
+      - "5173:80"       # browse http://localhost:5173
+    depends_on:
+      - backend
+    restart: unless-stopped

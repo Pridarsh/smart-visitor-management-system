@@ -1,0 +1,55 @@
+name: build-and-deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 3️⃣ Log in to Azure Container Registry (ACR)
+      - name: Docker login to ACR
+        run: az acr login --name recsvm
+
+      # 4️⃣ Build and Push Frontend Docker Image
+      - name: Build and Push Frontend
+        run: |
+          docker build -t recsvm.azurecr.io/svm-frontend:latest ./
+          docker push recsvm.azurecr.io/svm-frontend:latest
+
+      # 5️⃣ Build and Push Backend Docker Image
+      - name: Build and Push Backend
+        run: |
+          docker build -t recsvm.azurecr.io/svm-backend:latest ./svm-backend
+          docker push recsvm.azurecr.io/svm-backend:latest
+
+      # 6️⃣ Deploy Frontend to Azure Web App
+      - name: Deploy Frontend to Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: svm-frontend-app           # 🔁 replace if your app name is different
+          images: recsvm.azurecr.io/svm-frontend:latest
+
+      # 7️⃣ Deploy Backend to Azure Web App
+      - name: Deploy Backend to Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: svm-backend-app            # 🔁 replace if your app name is different
+          images: recsvm.azurecr.io/svm-backend:latest

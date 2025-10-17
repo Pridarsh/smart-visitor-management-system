@@ -1,0 +1,1 @@
+import "./GeneratePass.js";
