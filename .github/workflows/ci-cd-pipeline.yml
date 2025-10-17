@@ -1,12 +1,32 @@
-name: build-and-deploy
+name: ci-cd
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: webapps-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Registry and image names
+  REGISTRY: ${{ secrets.ACR_NAME }}.azurecr.io
+  FRONTEND_IMAGE: svm-frontend
+  BACKEND_IMAGE: svm-backend
+
+  # Paths to Dockerfiles/contexts
+  FRONTEND_CONTEXT: ./smart-visitor-management
+  FRONTEND_DOCKERFILE: ./smart-visitor-management/Dockerfile
+  BACKEND_CONTEXT: ./backend
+  BACKEND_DOCKERFILE: ./backend/Dockerfile
+
+  # Azure Web Apps
+  FRONTEND_WEBAPP: ${{ secrets.WEB_APP_NAME1 }}
+  BACKEND_WEBAPP: ${{ secrets.WEB_APP_NAME2 }}
 
 jobs:
-  build-and-deploy:
+  build-push-deploy:
     runs-on: ubuntu-latest
 
     permissions:
@@ -14,42 +34,62 @@ jobs:
       contents: read
 
     steps:
-      # 1️⃣ Checkout the repository
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Log in to Azure
+      # Login to Azure (OIDC) so azure/webapps-deploy works
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ Log in to Azure Container Registry (ACR)
+      # Docker login to ACR (for pushing images)
       - name: Docker login to ACR
-        run: az acr login --name recsvm
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      # 4️⃣ Build and Push Frontend Docker Image
-      - name: Build and Push Frontend
-        run: |
-          docker build -t recsvm.azurecr.io/svm-frontend:latest ./
-          docker push recsvm.azurecr.io/svm-frontend:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # 5️⃣ Build and Push Backend Docker Image
-      - name: Build and Push Backend
-        run: |
-          docker build -t recsvm.azurecr.io/svm-backend:latest ./backend
-          docker push recsvm.azurecr.io/svm-backend:latest
+      # Build + push FRONTEND
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.FRONTEND_CONTEXT }}
+          file: ${{ env.FRONTEND_DOCKERFILE }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # 6️⃣ Deploy Frontend to Azure Web App
+      # Build + push BACKEND
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.BACKEND_CONTEXT }}
+          file: ${{ env.BACKEND_DOCKERFILE }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Deploy FRONTEND image to Web App
       - name: Deploy Frontend to Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: svm-frontend-app           # 🔁 replace if your app name is different
-          images: recsvm.azurecr.io/svm-frontend:latest
+          app-name: ${{ env.FRONTEND_WEBAPP }}
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
 
-      # 7️⃣ Deploy Backend to Azure Web App
+      # Deploy BACKEND image to Web App
       - name: Deploy Backend to Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: svm-backend-app            # 🔁 replace if your app name is different
-          images: recsvm.azurecr.io/svm-backend:latest
+          app-name: ${{ env.BACKEND_WEBAPP }}
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
