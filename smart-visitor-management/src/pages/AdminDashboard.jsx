@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getAdminStats, getRecentVisitors } from '../lib/api';
+import { Link } from "react-router-dom";
+
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
