@@ -9,10 +9,10 @@
   # ---- Run stage (nginx) ----
   FROM nginx:alpine
   
-  # Hard-wire your backend host
+  # Your backend app host (no scheme)
   ENV BACKEND_HOST=svm-backend-app-gycabreyg3g7c7aj.eastus-01.azurewebsites.net
   
-  # Robust nginx: proxies ANY /api* request (GET/POST/OPTIONS) to backend, SPA fallback
+  # Nginx: proxy ALL /api* to backend; do NOT override Host
   RUN printf "server {\n\
     listen 80;\n\
     server_name _;\n\
@@ -23,7 +23,8 @@
     location /api {\n\
       proxy_http_version 1.1;\n\
       proxy_set_header Connection \"\";\n\
-      proxy_set_header Host \$host;\n\
+      # DO NOT set Host $host; let nginx send backend host from proxy_pass\n\
+      # proxy_set_header Host \$host;  # <-- removed\n\
       proxy_set_header X-Real-IP \$remote_addr;\n\
       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
       proxy_set_header X-Forwarded-Proto \$scheme;\n\
@@ -31,15 +32,15 @@
       proxy_pass https://$BACKEND_HOST;\n\
     }\n\
   \n\
-    # SPA fallback for client-side routes\n\
+    # SPA fallback for client routes\n\
     location / {\n\
       try_files \$uri /index.html;\n\
     }\n\
   }\n" > /etc/nginx/conf.d/default.conf
   
-  # If your build output is Vite 'dist' (most common):
+  # If your build output is Vite (dist):
   COPY --from=build /app/dist /usr/share/nginx/html
-  # If you use CRA 'build', use this instead (and remove the line above):
+  # If Create React App (build), use this instead:
   # COPY --from=build /app/build /usr/share/nginx/html
   
   EXPOSE 80
