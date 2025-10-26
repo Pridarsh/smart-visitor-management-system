@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getAdminStats, getRecentVisitors } from '../lib/api';
-import { Link } from "react-router-dom";
-
+import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalToday: 0, insideNow: 0, pending: 0, monthTotal: 0 });
+  const [stats, setStats] = useState({
+    totalToday: 0,
+    insideNow: 0,
+    pending: 0,
+    monthTotal: 0
+  });
   const [recent, setRecent] = useState([]);
 
   useEffect(() => {
@@ -31,12 +33,11 @@ const AdminDashboard = () => {
       <div className="dashboard-container">
         <div className="dashboard-header">
           <h1>Admin Dashboard</h1>
-          <button
-            className="view-log-btn"
-            onClick={() => navigate('/visitor-log')}
-          >
-            View Visitor Log
-          </button>
+
+          {/* ✅ Button now links to the AI page */}
+          <Link to="/ai" className="view-log-btn">
+            AI Assistant
+          </Link>
         </div>
 
         {/* Stats */}
