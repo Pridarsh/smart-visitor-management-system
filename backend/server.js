@@ -250,3 +250,97 @@ app.get("/api/admin/recent", async (_req, res) => {
 /* -------------------------------------------------------------------------- */
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`API listening on ${PORT}`));
+
+// ===== AI: summarize today's activity for admins =====
+app.get("/api/ai/summary", async (_req, res) => {
+  try {
+    const [totalToday, insideNow, pending, monthTotal, recent] = await Promise.all([
+      countToday(),
+      countByStatus("CHECKED_IN"),
+      countByStatus("PENDING"),
+      countThisMonth(),
+      fetchRecent(10),
+    ]);
+
+    const context = {
+      totalToday, insideNow, pending, monthTotal,
+      recentPurposes: recent.map(r => r.label),
+    };
+
+    // Default fallback text (in case Azure OpenAI is not configured)
+    let summary = `Today: ${totalToday} visitors; ${insideNow} inside; ${pending} pending; month total: ${monthTotal}.`;
+
+    // Try Azure OpenAI if configured
+    try {
+      const { default: OpenAI } = await import("openai");
+      const client = new OpenAI({
+        apiKey: process.env.AZURE_OPENAI_KEY,
+        baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT}`,
+        defaultHeaders: { "api-key": process.env.AZURE_OPENAI_KEY },
+        defaultQuery: { "api-version": process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview" },
+      });
+
+      const r = await client.chat.completions.create({
+        temperature: 0.2,
+        messages: [
+          { role: "system", content: "You are a concise operations assistant for a campus visitor desk." },
+          { role: "user",   content: `Summarize today's visitor status in 3–4 sentences. Context (JSON): ${JSON.stringify(context)}` }
+        ]
+      });
+      summary = r.choices?.[0]?.message?.content?.trim() || summary;
+    } catch (e) {
+      console.warn("[AI] summary fallback:", e?.message || e);
+    }
+
+    res.json({ ok: true, summary, metrics: context });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to build summary" });
+  }
+});
+
+// ===== AI: suggestion for a single visitor (approve/deny/review) =====
+app.post("/api/ai/suggest-approval", async (req, res) => {
+  try {
+    const v = req.body?.visitor;
+    if (!v) return res.status(400).json({ error: "visitor required" });
+
+    let suggestion = { decision: "REVIEW", confidence: 0.5, reason: "Insufficient data" };
+
+    try {
+      const { default: OpenAI } = await import("openai");
+      const client = new OpenAI({
+        apiKey: process.env.AZURE_OPENAI_KEY,
+        baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT}`,
+        defaultHeaders: { "api-key": process.env.AZURE_OPENAI_KEY },
+        defaultQuery: { "api-version": process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview" },
+      });
+
+      const sys = "You are a risk-aware gate assistant. Respond ONLY with valid JSON {decision:'APPROVE'|'DENY'|'REVIEW', confidence: number between 0 and 1, reason:string}. Be conservative.";
+      const usr = `Visitor: ${JSON.stringify({
+        reasonForVisit: v.reasonForVisit,
+        label: v.label || "OTHER",
+        emailDomain: (v.email || "").split("@")[1] || "",
+      })}`;
+
+      const r = await client.chat.completions.create({
+        temperature: 0,
+        messages: [
+          { role: "system", content: sys },
+          { role: "user",   content: usr }
+        ]
+      });
+
+      const raw = r.choices?.[0]?.message?.content || "";
+      suggestion = JSON.parse(raw);
+    } catch (e) {
+      console.warn("[AI] suggest-approval fallback:", e?.message || e);
+    }
+
+    res.json({ ok: true, suggestion });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to suggest" });
+  }
+});
+
