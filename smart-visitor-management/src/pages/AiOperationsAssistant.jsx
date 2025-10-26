@@ -1,13 +1,28 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import Layout from "../components/Layout";
 import AiAssistant from "../components/AiAssistant";
 
 export default function AiOperationsAssistant() {
   return (
-    <div style={{padding:24}}>
-      <h1 style={{marginBottom:12}}>AI Operations Assistant</h1>
-      <p style={{marginTop:0, opacity:0.8}}>
-        Get a concise summary of today's visitors and AI suggestions for approvals.
-      </p>
-      <AiAssistant />
-    </div>
+    <Layout>
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h1>AI Operations Assistant</h1>
+
+          {/* same purple pill style as other pages */}
+          <Link to="/admin-dashboard" className="view-log-btn">
+            Back to Dashboard
+          </Link>
+        </div>
+
+        <div className="recent-visitors" style={{ marginTop: 16 }}>
+          <h2>Insights & Actions</h2>
+          <div className="table-container" style={{ padding: 16 }}>
+            <AiAssistant />
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 }

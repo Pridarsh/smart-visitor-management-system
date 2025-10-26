@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 async function fetchJSON(url, opts) {
   const res = await fetch(url, opts);
@@ -26,7 +26,6 @@ export default function AiAssistant() {
   }
 
   async function suggest() {
-    // Minimal demo: ask a suggestion for a fake visitor the UI is currently viewing.
     const visitor = {
       reasonForVisit: "Meeting with HOD about schedule",
       label: "MEETING",
@@ -49,31 +48,33 @@ export default function AiAssistant() {
   }
 
   return (
-    <div style={{display:"grid", gap:16}}>
-      <div style={{display:"flex", gap:12, alignItems:"center"}}>
-        <button onClick={getSummary} disabled={loading}>
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        {/* reuse your purple pill button style */}
+        <button className="view-log-btn" onClick={getSummary} disabled={loading}>
           {loading ? "Summarizing..." : "Summarize Today's Activity"}
         </button>
-        <button onClick={suggest} disabled={suggestLoading}>
+
+        <button className="view-log-btn" onClick={suggest} disabled={suggestLoading}>
           {suggestLoading ? "Analyzing..." : "AI Suggest Approval (demo)"}
         </button>
       </div>
 
       {summary && (
-        <div className="card" style={{padding:12, background:"#fff8", borderRadius:12}}>
-          <strong>AI Summary</strong>
-          <p style={{marginTop:8, whiteSpace:"pre-wrap"}}>{summary}</p>
+        <div className="stat-card">
+          <h3>AI Summary</h3>
+          <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{summary}</p>
         </div>
       )}
 
       {suggestText && (
-        <div className="card" style={{padding:12, background:"#fff8", borderRadius:12}}>
-          <strong>AI Decision</strong>
-          <p style={{marginTop:8}}>{suggestText}</p>
+        <div className="stat-card">
+          <h3>AI Decision</h3>
+          <p style={{ marginTop: 8 }}>{suggestText}</p>
         </div>
       )}
 
-      {error && <p style={{color:"crimson"}}>{error}</p>}
+      {error && <p style={{ color: "crimson" }}>{error}</p>}
     </div>
   );
 }
