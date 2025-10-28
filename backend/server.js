@@ -1,31 +1,4 @@
-// server.js — CampusGate API
-// Phase-6/7: Cosmos DB + GenAI classifyPurpose + Queue trigger for pass generation
 
-// 🔴 NEW (1): bring in dotenv first so env vars are ready for App Insights
-import dotenv from "dotenv";
-dotenv.config();
-
-// 🔴 NEW (2): import applicationinsights
-import appInsights from "applicationinsights";
-
-// 🔴 NEW (3): init Application Insights before creating the Express app
-if (process.env.APPINSIGHTS_INSTRUMENTATIONKEY) {
-  appInsights
-    .setup(process.env.APPINSIGHTS_INSTRUMENTATIONKEY)
-    .setAutoCollectRequests(true)
-    .setAutoCollectDependencies(true)
-    .setAutoCollectExceptions(true)
-    .setAutoCollectPerformance(true)
-    .setAutoCollectConsole(true)
-    .setSendLiveMetrics(true)
-    .start();
-
-  appInsights.defaultClient.trackTrace({
-    message: "✅ Application Insights telemetry initialized for CampusGate backend"
-  });
-} else {
-  console.warn("⚠ APPINSIGHTS_INSTRUMENTATIONKEY not found. Telemetry will NOT be sent.");
-}
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -35,6 +8,9 @@ import { v4 as uuid } from "uuid";
 import { CosmosClient } from "@azure/cosmos";
 import { classifyPurpose } from "./ai.js";            // Azure OpenAI classifier
 import { enqueuePassRequest } from "./services/queue.js"; // <-- Queue helper
+import dotenv from "dotenv";
+dotenv.config();
+
 
 
 
