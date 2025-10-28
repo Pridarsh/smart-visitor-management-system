@@ -1,0 +1,13 @@
+{
+    "bindings": [
+      {
+        "name": "myQueueItem",
+        "type": "queueTrigger",
+        "direction": "in",
+        "queueName": "visitor-pass-requests",
+        "connection": "AZURE_STORAGE_CONN"
+      }
+    ],
+    "scriptFile": "index.js"
+  }
+  
