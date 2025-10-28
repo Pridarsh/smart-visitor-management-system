@@ -1,1 +1,68 @@
+name: codeql-security-scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 3 * * 1'  # weekly Monday 03:00 UTC scan
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: CodeQL Analyze - Node/Express backend
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # A. Install backend deps
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          npm install
+
+      # (Optional) Install Azure Function deps (uncomment if you want that scanned too)
+      # - name: Install Azure Functions dependencies
+      #   working-directory: ./functions
+      #   run: |
+      #     npm install
+
+      # B. Init CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      # C. Autobuild (for JS this sets up project structure)
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      # D. Analyze -> SARIF output
+      - name: Perform CodeQL Analysis
+        id: analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: true
+          output: ./codeql-results
+
+      # E. Upload SARIF so you can download it
+      - name: Upload CodeQL SARIF
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif-${{ matrix.language }}
+          path: ./codeql-results
 
