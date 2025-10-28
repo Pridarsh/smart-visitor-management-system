@@ -36,7 +36,7 @@ import { CosmosClient } from "@azure/cosmos";
 import { classifyPurpose } from "./ai.js";            // Azure OpenAI classifier
 import { enqueuePassRequest } from "./services/queue.js"; // <-- Queue helper
 
-dotenv.config();
+
 
 const app = express();
 app.use(cors());
