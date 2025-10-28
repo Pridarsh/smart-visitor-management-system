@@ -1,12 +1,10 @@
 // src/lib/api.js
 
-// In dev (vite), leave empty to use proxy; in prod set VITE_API_BASE_URL
-const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "";
-const API_BASE = RAW_BASE.replace(/\/+$/, ""); // strip trailing slash
+// Leave empty in dev (Vite proxy), set VITE_API_BASE_URL in prod
+const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 function makeUrl(path) {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return API_BASE ? `${API_BASE}${p}` : p; // dev => relative, prod => absolute
+  return BASE ? `${BASE}${path}` : path;
 }
 
 async function jfetch(path, opts = {}) {
@@ -46,13 +44,13 @@ export async function getVisitors(limit = 200) {
   return jfetch(`/api/visitors?limit=${limit}`);
 }
 
-// PENDING list
+// PENDING list (client-side filter so it works even without special route)
 export async function getPendingVisitors(limit = 200) {
   const all = await getVisitors(limit);
   return Array.isArray(all) ? all.filter(v => (v.status || "PENDING") === "PENDING") : [];
 }
 
-// Update status
+// Update status: "APPROVED" | "REJECTED" | "CHECKED_IN" | "CHECKED_OUT"
 export async function updateVisitorStatus(id, status) {
   return jfetch(`/api/visitors/${encodeURIComponent(id)}/status`, {
     method: "PATCH",
@@ -60,9 +58,11 @@ export async function updateVisitorStatus(id, status) {
   });
 }
 
-// Send / re-send QR pass email
+// Send / re-send QR pass email (optional backend)
 export async function sendPassEmail(id) {
-  return jfetch(`/api/visitors/${encodeURIComponent(id)}/send-pass`, { method: "POST" });
+  return jfetch(`/api/visitors/${encodeURIComponent(id)}/send-pass`, {
+    method: "POST",
+  });
 }
 
 // Filter by status and/or today
@@ -73,11 +73,17 @@ export async function listVisitorsByStatus(status, today = false) {
   return jfetch(`/api/visitors?${qs.toString()}`);
 }
 
-// Convenience
+// Convenience helpers for buttons
 export const checkIn  = (id) => updateVisitorStatus(id, "CHECKED_IN");
 export const checkOut = (id) => updateVisitorStatus(id, "CHECKED_OUT");
 
-// AI
+// ===== AI =====
+
+// Summary (cards + narrative)
 export async function getAiSummary() {
-  return jfetch("/api/ai/summary");
+  return jfetch("/api/ai/summary"); // { ok, summary, metrics: { totalToday, insideNow, pending, monthTotal } }
 }
+
+
+
+

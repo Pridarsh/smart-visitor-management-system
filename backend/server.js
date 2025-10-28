@@ -344,3 +344,63 @@ app.post("/api/ai/suggest-approval", async (req, res) => {
   }
 });
 
+app.post("/api/visitors/:id/send-pass", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // look up visitor to get the email
+    let visitor = null;
+    if (cosmos) {
+      const { resources } = await cosmos.container.items
+        .query({ query: "SELECT * FROM c WHERE c.id = @id", parameters: [{ name: "@id", value: id }] })
+        .fetchAll();
+      visitor = resources?.[0];
+    } else {
+      visitor = mem.visitors.find(v => v.id === id);
+    }
+    if (!visitor) return res.status(404).json({ error: "Visitor not found" });
+
+    // enqueue job for function to generate QR + email
+    await enqueuePassRequest({ id: visitor.id, email: visitor.email });
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to enqueue pass email" });
+  }
+});
+
+// Approve / Reject a visitor
+// body: { status: "APPROVED" | "REJECTED", approvedBy?: string }
+app.patch("/api/visitors/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, approvedBy } = req.body || {};
+
+    if (!status || !["APPROVED", "REJECTED"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    // read the doc
+    const { resources } = await cosmos.container.items
+      .query({
+        query: "SELECT * FROM c WHERE c.id = @id",
+        parameters: [{ name: "@id", value: id }],
+      })
+      .fetchAll();
+
+    const doc = resources?.[0];
+    if (!doc) return res.status(404).json({ error: "Visitor not found" });
+
+    // update + save
+    doc.status = status;
+    doc.approvedBy = approvedBy || "admin";
+    doc.approvedAt = new Date().toISOString();
+
+    const { resource: saved } = await cosmos.container.items.upsert(doc);
+    res.json(saved);
+  } catch (e) {
+    console.error("status route error:", e);
+    res.status(500).json({ error: "Failed to update status" });
+  }
+});
