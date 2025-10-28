@@ -559,3 +559,139 @@
       margin-bottom: 1rem;
     }
   }
+
+  /* ✅ AI Assistant Popup Styling */
+.ai-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.ai-box {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 450px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: fadeIn .25s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-box h3 {
+  margin-top: 0;
+  font-weight: 600;
+}
+
+.ai-box textarea {
+  width: 100%;
+  min-height: 120px;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.ai-box button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  margin-top: 10px;
+}
+
+.ai-box button:hover {
+  background-color: #0056b3;
+}
+
+.ai-result {
+  margin-top: 12px;
+  font-size: 14px;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 6px;
+  color: #222;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* AI page niceties (uses your existing theme colors) */
+.button-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0 12px;
+}
+
+.ai-summary-card {
+  padding: 16px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.ai-summary-card h3 {
+  margin: 0 0 6px;
+}
+
+.ai-summary-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* pill for AI label */
+.chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.chip-purple {
+  background: #ede7f6;
+  color: #5e35b1;
+}
+
+/* small muted note */
+.muted-note {
+  margin-top: 10px;
+  opacity: 0.7;
+  font-size: 0.95rem;
+}
+
+.label-badge {
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  background: #eef1f4;
+  color: #222;
+}
+
+/* soft colors per label */
+.label-meeting    { background:#e7f0ff; color:#0b5cff; }
+.label-delivery   { background:#fff3e0; color:#d87900; }
+.label-interview  { background:#e9f7ef; color:#1b8c3a; }
+.label-event      { background:#f0e9ff; color:#6a00ff; }
+.label-service    { background:#eaf7ff; color:#0077a3; }
+.label-academic   { background:#fff0f3; color:#c0173c; }
+.label-admin      { background:#f5f7fa; color:#394150; }
+.label-visit      { background:#e8fff6; color:#008b6e; }
+.label-other      { background:#ececec; color:#555; }

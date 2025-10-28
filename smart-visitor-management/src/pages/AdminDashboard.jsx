@@ -34,10 +34,19 @@ const AdminDashboard = () => {
         <div className="dashboard-header">
           <h1>Admin Dashboard</h1>
 
-          {/* ✅ Button now links to the AI page */}
-          <Link to="/ai" className="view-log-btn">
-            AI Assistant
-          </Link>
+          {/* === Buttons === */}
+          <div className="button-group" style={{ display: 'flex', gap: 12 }}>
+            {/* ✅ New Approvals button */}
+            <Link to="/approvals" className="view-log-btn">
+              Approvals ✅
+            </Link>
+            <Link className="view-log-btn" to="/checkins">Check-Ins 🛎️</Link>
+
+            {/* Existing AI link */}
+            <Link to="/ai" className="view-log-btn" style={{ background: '#6a00ff' }}>
+              AI Assistant 🤖
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
@@ -84,7 +93,10 @@ const AdminDashboard = () => {
                 {recent.map((r) => (
                   <tr key={r.id}>
                     <td>{r.firstName} {r.lastName}</td>
-                    <td>{r.reasonForVisit}</td>
+
+                    {/* ✅ Prefer AI label when available */}
+                    <td>{r.reasonForVisit || "—"}</td>
+
                     <td>{r.createdAt ? new Date(r.createdAt).toLocaleTimeString() : '—'}</td>
                     <td>
                       <span
