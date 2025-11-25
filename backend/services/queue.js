@@ -6,7 +6,13 @@ const queueName = process.env.PASS_REQUESTS_QUEUE || "visitor-pass-requests";
 
 let client;
 function getClient() {
-  if (!client) client = new QueueClient(conn, queueName);
+  if (!client) {
+    if (!conn) {
+      throw new Error("AZURE_STORAGE_CONN not set");
+    }
+    // ✅ use the helper for connection strings
+    client = QueueClient.fromConnectionString(conn, queueName);
+  }
   return client;
 }
 
