@@ -106,8 +106,8 @@ export async function GeneratePass(myQueueItem, context) {
 
     // 5) Send email (best-effort, do not poison the message if email fails)
     try {
-      const from = process.env.EMAIL_FROM;
-      const acsConn = process.env.ACS_EMAIL_CONN;
+      const from = process.env.ACS_SENDER;
+      const acsConn = process.env.ACS_CONNECTION_STRING;
       if (acsConn && from) {
         const emailClient = new EmailClient(acsConn);
            const message = {
