@@ -141,6 +141,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 // Create visitor + classify + enqueue QR email job
+// Create visitor + classify (NO QR here)
 app.post("/api/visitors", async (req, res) => {
   try {
     const { error, value } = visitorSchema.validate(req.body);
@@ -168,12 +169,7 @@ app.post("/api/visitors", async (req, res) => {
 
     const saved = await saveVisitor(doc);
 
-    // Enqueue background job for Azure Function to generate QR + email
-    try {
-      await enqueuePassRequest({ id: saved.id, email: saved.email });
-    } catch (e) {
-      console.error("enqueuePassRequest failed:", e);
-    }
+    // ❌ NO enqueuePassRequest here – QR only on approval
 
     res.status(201).json({ ok: true, visitor: saved });
   } catch (e) {
@@ -181,6 +177,7 @@ app.post("/api/visitors", async (req, res) => {
     res.status(500).json({ error: "Failed to create visitor" });
   }
 });
+
 
 // Full list for VisitorLog (optional ?limit=200)
 
