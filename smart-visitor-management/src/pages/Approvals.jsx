@@ -31,24 +31,34 @@ export default function Approvals() {
     setBusy(true);
     try {
       if (action === "APPROVE") {
-        await updateVisitorStatus(id, "APPROVED"); // requires backend PATCH route
-        await sendPassEmail(id);                   // optional; requires backend POST route
+        // 1) Always try to approve first
+        await updateVisitorStatus(id, "APPROVED");
+  
+        // 2) Try to send QR, but don't break approval if it fails
+        try {
+          await sendPassEmail(id);
+        } catch (e) {
+          console.error("sendPassEmail failed:", e);
+          alert("Visitor APPROVED, but QR email could not be sent. Please check the backend queue/email configuration.");
+        }
       } else {
+        // REJECT path
         await updateVisitorStatus(id, "REJECTED");
       }
+  
       setActive(null);
       await load();
     } catch (e) {
       console.error(e);
       alert(
         `Could not ${action === "APPROVE" ? "approve" : "reject"}.\n` +
-        `If this persists, add backend routes:\n` +
-        `PATCH /api/visitors/:id/status and POST /api/visitors/:id/send-pass`
+        `If this persists, check backend PATCH /api/visitors/:id/status.`
       );
     } finally {
       setBusy(false);
     }
   }
+    
 
   return (
     <Layout>
