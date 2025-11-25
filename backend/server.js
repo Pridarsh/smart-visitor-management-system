@@ -211,14 +211,30 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.get("/api/visitors", async (req, res) => {
   try {
+    const { status, today } = req.query;
     const limit = Math.min(parseInt(req.query.limit || "100", 10), 500);
-    const rows = await fetchAll(limit);
+
+    let rows = await fetchAll(limit);
+
+    // Filter by status
+    if (status) {
+      rows = rows.filter(v => v.status === status);
+    }
+
+    // Filter by today
+    if (today) {
+      const now = new Date();
+      const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+      rows = rows.filter(v => v.date === todayStr);
+    }
+
     res.json(rows);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to fetch visitors" });
   }
 });
+
 
 // Admin stats
 app.get("/api/admin/stats", async (_req, res) => {
@@ -377,30 +393,57 @@ app.patch("/api/visitors/:id/status", async (req, res) => {
     const { id } = req.params;
     const { status, approvedBy } = req.body || {};
 
-    if (!status || !["APPROVED", "REJECTED"].includes(status)) {
+    const allowedStatuses = [
+      "APPROVED",
+      "REJECTED",
+      "CHECKED_IN",
+      "CHECKED_OUT",
+    ];
+
+    if (!status || !allowedStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
 
-    // read the doc
-    const { resources } = await cosmos.container.items
-      .query({
-        query: "SELECT * FROM c WHERE c.id = @id",
-        parameters: [{ name: "@id", value: id }],
-      })
-      .fetchAll();
+    let doc;
 
-    const doc = resources?.[0];
+    if (cosmos) {
+      const { resources } = await cosmos.container.items
+        .query({
+          query: "SELECT * FROM c WHERE c.id = @id",
+          parameters: [{ name: "@id", value: id }],
+        })
+        .fetchAll();
+      doc = resources?.[0];
+    } else {
+      doc = mem.visitors.find(v => v.id === id);
+    }
+
     if (!doc) return res.status(404).json({ error: "Visitor not found" });
 
-    // update + save
-    doc.status = status;
-    doc.approvedBy = approvedBy || "admin";
-    doc.approvedAt = new Date().toISOString();
+    const now = new Date().toISOString();
 
-    const { resource: saved } = await cosmos.container.items.upsert(doc);
-    res.json(saved);
+    doc.status = status;
+    doc.updatedAt = now;
+
+    if (status === "APPROVED") {
+      doc.approvedAt = now;
+      doc.approvedBy = approvedBy || "admin";
+    }
+
+    if (status === "CHECKED_IN") {
+      doc.checkInAt = now;
+    }
+
+    if (status === "CHECKED_OUT") {
+      doc.checkOutAt = now;
+    }
+
+    const saved = await saveVisitor(doc);
+
+    res.json({ ok: true, visitor: saved });
   } catch (e) {
-    console.error("status route error:", e);
+    console.error("Status update error:", e);
     res.status(500).json({ error: "Failed to update status" });
   }
 });
+
