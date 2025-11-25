@@ -361,27 +361,33 @@ app.post("/api/visitors/:id/send-pass", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // look up visitor to get the email
     let visitor = null;
     if (cosmos) {
       const { resources } = await cosmos.container.items
-        .query({ query: "SELECT * FROM c WHERE c.id = @id", parameters: [{ name: "@id", value: id }] })
+        .query({
+          query: "SELECT * FROM c WHERE c.id = @id",
+          parameters: [{ name: "@id", value: id }],
+        })
         .fetchAll();
       visitor = resources?.[0];
     } else {
       visitor = mem.visitors.find(v => v.id === id);
     }
+
     if (!visitor) return res.status(404).json({ error: "Visitor not found" });
 
-    // enqueue job for function to generate QR + email
     await enqueuePassRequest({ id: visitor.id, email: visitor.email });
 
     res.json({ ok: true });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to enqueue pass email" });
+    console.error("send-pass error:", e);
+    res.status(500).json({
+      error: "Failed to enqueue pass email",
+      detail: e.message || String(e),
+    });
   }
 });
+
 
 // Approve / Reject a visitor
 // body: { status: "APPROVED" | "REJECTED", approvedBy?: string }
