@@ -443,4 +443,20 @@ app.patch("/api/visitors/:id/status", async (req, res) => {
     res.status(500).json({ error: "Failed to update status" });
   }
 });
+app.get("/api/test-queue", async (req, res) => {
+  try {
+    const q = new (require("@azure/storage-queue").QueueClient)(
+      process.env.AZURE_STORAGE_CONN,
+      process.env.PASS_REQUESTS_QUEUE
+    );
+
+    await q.createIfNotExists();
+    await q.sendMessage("test message");
+
+    res.json({ ok: true, msg: "Queue working" });
+  } catch (e) {
+    console.error("Queue error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
 
