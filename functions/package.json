@@ -4,8 +4,9 @@
   "main": "index.js",
   "private": true,
   "dependencies": {
+    "@azure/functions": "^4.0.0",
     "@azure/communication-email": "^1.0.0",
-    "@azure/storage-blob": "^12.17.0",
+    "@azure/storage-blob": "^12.28.0",
     "qrcode": "^1.5.4"
   }
 }
