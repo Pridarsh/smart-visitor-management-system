@@ -1,11 +1,15 @@
 {
   "name": "campusgate-functions",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "private": true,
   "dependencies": {
-    "@azure/communication-email": "^1.0.0",
-    "@azure/storage-blob": "^12.17.0",
+    "@azure/functions": "^4.0.0",
+    "@azure/communication-email": "^1.1.0",
+    "@azure/storage-blob": "^12.29.1",
+    "@azure/cosmos": "^4.5.1",
     "qrcode": "^1.5.4"
   }
 }
+
